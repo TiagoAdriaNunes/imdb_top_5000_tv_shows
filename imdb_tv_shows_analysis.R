@@ -50,7 +50,7 @@ read_and_filter <- function(url, path, select_cols, na.strings = "\\N", filters 
 title_basics <- read_and_filter(
   files$title_basics,
   "data/title.basics.tsv.gz",
-  c("tconst", "titleType", "primaryTitle", "startYear", "runtimeMinutes", "genres"),
+  c("tconst", "titleType", "primaryTitle", "startYear", "endYear", "runtimeMinutes", "genres"),
   filters = c("!(runtimeMinutes == '0' | is.na(runtimeMinutes))", "(titleType == 'tvSeries' | titleType == 'tvMiniSeries')")
 )
 
@@ -102,12 +102,6 @@ title_crew_long_directors <- title_crew_long %>%
   select(tconst, nconst = directors) %>%
   mutate(role = "directors")
 
-# Combine directors and writers into one dataframe with appropriate roles
-title_crew_long_directors <- title_crew_long %>%
-  filter(!is.na(directors)) %>%
-  select(tconst, nconst = directors) %>%
-  mutate(role = "directors")
-
 title_crew_long_writers <- title_crew_long %>%
   filter(!is.na(writers)) %>%
   select(tconst, nconst = writers) %>%
@@ -125,7 +119,7 @@ crew_names <- title_crew_long_combined %>%
 # Ensure unique ranks by using tconst as a secondary criterion
 title_basics_ratings <- title_basics_ratings %>%
   filter(rank <= 5000) %>%
-  select(tconst, primaryTitle, startYear, rank, averageRating, numVotes, genres) %>%
+  select(tconst, primaryTitle, startYear, endYear, rank, averageRating, numVotes, genres) %>%
   mutate(genres = gsub(",([^ ])", ", \\1", genres))
 
 # Merge directors and writers names with the result data frame
@@ -142,7 +136,7 @@ results_with_crew <- results_with_crew %>%
 # Order and select columns
 results_with_crew <- results_with_crew %>%
   arrange(rank) %>%
-  select(tconst, primaryTitle, startYear, rank, averageRating, numVotes, directors, writers, genres, IMDbLink, Title_IMDb_Link)
+  select(tconst, primaryTitle, startYear, endYear, rank, averageRating, numVotes, directors, writers, genres, IMDbLink, Title_IMDb_Link)
 
 # Save results to CSV
 output_dir <- "app/data"
@@ -160,9 +154,8 @@ end_time <- Sys.time()
 
 # Calculate and print the time taken in minutes and seconds
 time_taken <- end_time - start_time
-total_seconds <- as.numeric(time_taken, units = "secs")
+total_seconds <-as.numeric(time_taken, units = "secs")
 minutes <- floor(total_seconds / 60)
 seconds <- total_seconds %% 60
 
 print(paste("Time taken:", minutes, "minutes and", round(seconds, 2), "seconds"))
-
