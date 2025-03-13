@@ -222,6 +222,13 @@ results_with_crew <- results_with_crew %>%
     Title_IMDb_Link = paste0('<a href="https://www.imdb.com/title/', tconst, '" target="_blank">', primaryTitle, '</a>')
   )
 
+# Replace NA values with "-" for directors and writers
+results_with_crew <- results_with_crew %>%
+  mutate(
+    directors = ifelse(is.na(directors), "-", directors),
+    writers = ifelse(is.na(writers), "-", writers)
+  )
+
 # Order and select columns
 results_with_crew <- results_with_crew %>%
   arrange(rank) %>%

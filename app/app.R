@@ -12,7 +12,7 @@ library(duckdb)
 con <- dbConnect(duckdb::duckdb(), dbdir = ":memory:")
 
 # Define the path to the results file
-results_file <- "data/results_with_crew.csv"
+results_file <- "app/data/results_with_crew.csv"
 
 # Get file creation/modification date for Last Update display
 file_date <- if (file.exists(results_file)) {
@@ -26,7 +26,7 @@ print(paste("File last modified on:", file_date))
 dbExecute(
   con,
   "CREATE TABLE IF NOT EXISTS results_with_crew
-AS SELECT * FROM 'data/results_with_crew.csv'"
+AS SELECT * FROM 'app/data/results_with_crew.csv'"
 )
 
 # Example SQL query
@@ -413,7 +413,7 @@ server <- function(input, output, session) {
     plot_data <- tryCatch({
       filteredData() %>%
         separate_rows(directors, sep = ",\\s*") %>%
-        filter(!is.na(directors), directors != "") %>%
+        filter(!is.na(directors), directors != "", directors != "-") %>%
         group_by(directors) %>%
         summarise(show_count = n()) %>%
         arrange(desc(show_count)) %>%
@@ -452,7 +452,7 @@ server <- function(input, output, session) {
     plot_data <- tryCatch({
       filteredData() %>%
         separate_rows(writers, sep = ",\\s*") %>%
-        filter(!is.na(writers), writers != "") %>%
+        filter(!is.na(writers), writers != "", writers != "-") %>%
         group_by(writers) %>%
         summarise(show_count = n()) %>%
         arrange(desc(show_count)) %>%
@@ -489,7 +489,7 @@ server <- function(input, output, session) {
     plot_data <- tryCatch({
       filteredData() %>%
         separate_rows(genres, sep = ",\\s*") %>%
-        filter(!is.na(genres), genres != "") %>%
+        filter(!is.na(genres), genres != "", genres != "-") %>%
         group_by(genres) %>%
         summarise(show_count = n()) %>%
         arrange(desc(show_count)) %>%
