@@ -12,7 +12,7 @@ library(duckdb)
 con <- dbConnect(duckdb::duckdb(), dbdir = ":memory:")
 
 # Define the path to the results file
-results_file <- "app/data/results_with_crew.csv"
+results_file <- "data/results_with_crew.csv"
 
 # Get file creation/modification date for Last Update display
 file_date <- if (file.exists(results_file)) {
@@ -26,7 +26,7 @@ print(paste("File last modified on:", file_date))
 dbExecute(
   con,
   "CREATE TABLE IF NOT EXISTS results_with_crew
-AS SELECT * FROM 'app/data/results_with_crew.csv'"
+AS SELECT * FROM 'data/results_with_crew.csv'"
 )
 
 # Example SQL query

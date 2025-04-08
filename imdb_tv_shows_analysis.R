@@ -97,6 +97,11 @@ title_basics <- read_and_filter(
     titleType %in% c('tvSeries', 'tvMiniSeries')  # TV series filters
   )
 
+# Define minimum vote threshold - For TV shows, we might want to use a different threshold
+# For TV shows, a reasonable threshold might be 10,000 votes
+m <- 10000
+
+# Calculate ratings from all titles
 title_ratings <- read_and_filter(
   files$title_ratings,
   "data/title.ratings.tsv.gz",
@@ -104,11 +109,45 @@ title_ratings <- read_and_filter(
 ) %>%
   filter(!is.na(numVotes), numVotes > 0)
 
-# Create title_basics_ratings first and get the filtered tconst list
+# Calculate C (global weighted average)
+# First collect the data to perform the calculation in R
+title_ratings_collected <- title_ratings %>% collect()
+
+# Calculate the weighted average in R
+C <- weighted.mean(title_ratings_collected$averageRating, 
+                   title_ratings_collected$numVotes)
+
+print(paste("Global weighted average (C):", C))
+
+# Create title_basics_ratings with the IMDb weighted formula
 title_basics_ratings <- title_basics %>%
   inner_join(title_ratings, by = "tconst") %>%
-  mutate(score = averageRating * numVotes) %>%
-  arrange(desc(score), tconst) %>%
+  # Apply the IMDb Bayesian weighted average formula
+  # WR = (v/(v+m)) × R + (m/(v+m)) × C
+  # Where:
+  # WR = Weighted Rating
+  # R = Average Rating for the TV show
+  # v = Number of votes for the TV show
+  # m = Minimum votes required (10,000 for TV shows)
+  # C = Mean vote across the whole report (calculated above)
+  mutate(
+    score = ((numVotes / (numVotes + m)) * averageRating) +
+            ((m / (numVotes + m)) * C),
+    # Round score to 1 decimal place for comparison purposes
+    score_rounded = round(score, 1)
+  ) %>%
+  # Sort by the weighted score in descending order
+  # For ties (same score_rounded), use multiple criteria:
+  # 1. Exact score (not rounded)
+  # 2. Number of votes (more votes is better)
+  # 3. Average rating (higher rating is better)
+  arrange(
+    desc(score_rounded),
+    desc(numVotes),
+    desc(score),
+    desc(averageRating),
+    tconst
+  ) %>%
   mutate(rank = row_number()) %>%
   filter(rank <= 5000) %>%  # Apply rank filter earlier
   compute()  # Create temporary table in DuckDB
@@ -185,7 +224,7 @@ print(paste("Number of combined crew entries:", nrow(title_crew_long_combined)))
 
 # Ensure unique ranks by using tconst as a secondary criterion
 title_basics_ratings <- title_basics_ratings %>%
-  select(tconst, primaryTitle, startYear, endYear, rank, averageRating, numVotes, genres) %>%
+  select(tconst, primaryTitle, startYear, endYear, rank, averageRating, numVotes, runtimeMinutes, genres, score, score_rounded) %>%
   collect() %>%  # Materialize the data first
   mutate(genres = gsub(",([^ ])", ", \\1", genres))  # Format genres after collecting
 
@@ -229,10 +268,10 @@ results_with_crew <- results_with_crew %>%
     writers = ifelse(is.na(writers), "-", writers)
   )
 
-# Order and select columns
+# Order and select columns (including score for reference)
 results_with_crew <- results_with_crew %>%
   arrange(rank) %>%
-  select(tconst, primaryTitle, startYear, endYear, rank, averageRating, numVotes, directors, writers, genres, IMDbLink, Title_IMDb_Link)
+  select(tconst, primaryTitle, startYear, endYear, rank, averageRating, numVotes, runtimeMinutes, score, directors, writers, genres, IMDbLink, Title_IMDb_Link)
 
 # Save results to CSV
 output_dir <- "app/data"
