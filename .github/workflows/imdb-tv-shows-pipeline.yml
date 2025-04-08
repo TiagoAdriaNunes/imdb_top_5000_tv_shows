@@ -79,7 +79,7 @@ jobs:
         with:
           name: imdb-results
           path: app/data/imdb_top_5000_tv_shows.csv
-          if-no-files-found: error  # Falhar explicitamente se o arquivo não existir
+          if-no-files-found: error
 
       - name: Configure Git
         run: |
