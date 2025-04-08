@@ -24,6 +24,7 @@ jobs:
             libcurl4-openssl-dev
             libssl-dev
             libxml2-dev
+            pandoc
           )
           sudo apt-get update
           sudo apt-get install --yes "${packages[@]}"
@@ -36,14 +37,17 @@ jobs:
       - name: Setup R dependencies
         uses: r-lib/actions/setup-renv@v2
         with:
-          cache-version: 1
-      
+          cache-version: 2
+
       - name: Install additional packages
         run: |
           R -e 'if(!requireNamespace("duckdb", quietly = TRUE)) install.packages("duckdb")'
           R -e 'if(!requireNamespace("duckplyr", quietly = TRUE)) install.packages("duckplyr")'
           R -e 'if(!requireNamespace("tidyr", quietly = TRUE)) install.packages("tidyr")'
           R -e 'if(!requireNamespace("dbplyr", quietly = TRUE)) install.packages("dbplyr")'
+          R -e 'if(!requireNamespace("knitr", quietly = TRUE)) install.packages("knitr")'
+          R -e 'if(!requireNamespace("rmarkdown", quietly = TRUE)) install.packages("rmarkdown")'
+          R -e 'renv::repair()'
           R -e 'renv::status()'
       
       - name: Create necessary directories
@@ -55,7 +59,7 @@ jobs:
       - name: Clean previous data
         run: |
           rm -rf data/*.gz || true
-          rm -f app/data/results_with_crew.csv || true
+          rm -f app/data/imdb_top_5000_tv_shows.csv || true
       
       - name: Run IMDb TV Shows analysis script
         run: |
