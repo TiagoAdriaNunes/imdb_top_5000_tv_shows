@@ -14,12 +14,20 @@ con <- dbConnect(duckdb::duckdb(), dbdir = ":memory:")
 # Define the path to the results file
 results_file <- "data/imdb_top_5000_tv_shows.csv"
 
-# Get file creation/modification date for Last Update display
-file_date <- if (file.exists(results_file)) {
-  format(file.mtime(results_file), "%Y-%m-%d")
-} else {
-  "N/A"
+# Remove existing file if it exists
+if (file.exists(results_file)) {
+  file.remove(results_file)
+  print(paste("Removed existing file:", results_file))
 }
+
+# Download the file from GitHub
+github_url <- "https://raw.githubusercontent.com/TiagoAdriaNunes/imdb_top_5000_tv_shows/main/app/data/imdb_top_5000_tv_shows.csv"
+dir.create(dirname(results_file), showWarnings = FALSE, recursive = TRUE)
+download.file(github_url, results_file, mode = "wb")
+print(paste("File downloaded from GitHub to:", results_file))
+
+# Get file creation/modification date for Last Update display
+file_date <- format(file.mtime(results_file), "%Y-%m-%d")
 print(paste("File last modified on:", file_date))
 
 # Load the data into DuckDB
@@ -336,10 +344,10 @@ server <- function(input, output, session) {
     reactable(
       filteredData() %>%
         select(
+          rank,
           Title_IMDb_Link,
           startYear,
           endYear,
-          rank,
           averageRating,
           numVotes,
           directors,
@@ -347,6 +355,7 @@ server <- function(input, output, session) {
           genres
         ),
       columns = list(
+        rank = colDef(name = "Rank", minWidth = 50),
         Title_IMDb_Link = colDef(
           name = "Title/IMDb Link",
           html = TRUE,
@@ -364,7 +373,6 @@ server <- function(input, output, session) {
             }
           }
         ),
-        rank = colDef(name = "Rank", minWidth = 50),
         averageRating = colDef(name = "Average Rating", minWidth = 70),
         numVotes = colDef(
           name = "Number of Votes",
@@ -375,8 +383,8 @@ server <- function(input, output, session) {
             locales = "en-US"
           )
         ),
-        directors = colDef(name = "Directors", minWidth = 150),
-        writers = colDef(name = "Writers", minWidth = 200),
+        directors = colDef(name = "Directors", minWidth = 150, na = "-"),
+        writers = colDef(name = "Writers", minWidth = 200, na = "-"),
         genres = colDef(name = "Genres", minWidth = 180)
       ),
       searchable = FALSE,
@@ -413,7 +421,7 @@ server <- function(input, output, session) {
     plot_data <- tryCatch({
       filteredData() %>%
         separate_rows(directors, sep = ",\\s*") %>%
-        filter(!is.na(directors), directors != "", directors != "-") %>%
+        filter(!is.na(directors), directors != "", directors != "-", directors != "NA") %>%
         group_by(directors) %>%
         summarise(show_count = n()) %>%
         arrange(desc(show_count)) %>%
@@ -435,7 +443,6 @@ server <- function(input, output, session) {
       x = ~ show_count,
       y = ~ directors,
       type = "bar",
-      # Explicitly specify type
       marker = list(color = "#427ea6"),
       orientation = "h"
     ) %>%
@@ -452,7 +459,7 @@ server <- function(input, output, session) {
     plot_data <- tryCatch({
       filteredData() %>%
         separate_rows(writers, sep = ",\\s*") %>%
-        filter(!is.na(writers), writers != "", writers != "-") %>%
+        filter(!is.na(writers), writers != "", writers != "-", writers != "NA") %>%
         group_by(writers) %>%
         summarise(show_count = n()) %>%
         arrange(desc(show_count)) %>%
@@ -474,7 +481,6 @@ server <- function(input, output, session) {
       x = ~ show_count,
       y = ~ writers,
       type = "bar",
-      # Explicitly specify type
       marker = list(color = "#427ea6"),
       orientation = "h"
     ) %>%
@@ -511,7 +517,6 @@ server <- function(input, output, session) {
       x = ~ show_count,
       y = ~ genres,
       type = "bar",
-      # Explicitly specify type
       marker = list(color = "#427ea6"),
       orientation = "h"
     ) %>%
