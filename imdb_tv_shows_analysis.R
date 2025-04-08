@@ -278,8 +278,8 @@ output_dir <- "app/data"
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
-write.csv(results_with_crew, file.path(output_dir, "results_with_crew.csv"), row.names = FALSE)
-print(paste("File saved to:", file.path(output_dir, "results_with_crew.csv")))
+write.csv(results_with_crew, file.path(output_dir, "imdb_top_5000_tv_shows.csv"), row.names = FALSE)
+print(paste("File saved to:", file.path(output_dir, "imdb_top_5000_tv_shows.csv")))
 
 # Free memory by running garbage collection
 gc()

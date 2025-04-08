@@ -12,7 +12,7 @@ library(duckdb)
 con <- dbConnect(duckdb::duckdb(), dbdir = ":memory:")
 
 # Define the path to the results file
-results_file <- "data/results_with_crew.csv"
+results_file <- "data/imdb_top_5000_tv_shows.csv"
 
 # Get file creation/modification date for Last Update display
 file_date <- if (file.exists(results_file)) {
@@ -25,12 +25,12 @@ print(paste("File last modified on:", file_date))
 # Load the data into DuckDB
 dbExecute(
   con,
-  "CREATE TABLE IF NOT EXISTS results_with_crew
-AS SELECT * FROM 'data/results_with_crew.csv'"
+  "CREATE TABLE IF NOT EXISTS imdb_top_5000_tv_shows
+AS SELECT * FROM 'data/imdb_top_5000_tv_shows.csv'"
 )
 
 # Example SQL query
-data <- dbGetQuery(con, "SELECT * FROM results_with_crew")
+data <- dbGetQuery(con, "SELECT * FROM imdb_top_5000_tv_shows")
 
 # Ensure numeric columns are properly converted
 data$startYear <- as.numeric(data$startYear)
