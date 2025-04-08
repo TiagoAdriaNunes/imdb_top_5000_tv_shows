@@ -1,0 +1,98 @@
+name: IMDb TV Shows Pipeline
+
+on:
+  schedule:
+    - cron: "30 0 * * *"
+
+  workflow_dispatch:
+
+jobs:
+  main:
+    name: Run IMDb TV Shows analysis
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup system dependencies
+        run: |
+          packages=(
+            libcurl4-openssl-dev
+            libssl-dev
+            libxml2-dev
+          )
+          sudo apt-get update
+          sudo apt-get install --yes "${packages[@]}"
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: renv
+
+      - name: Setup R dependencies
+        uses: r-lib/actions/setup-renv@v2
+        with:
+          cache-version: 1
+      
+      - name: Install additional packages
+        run: |
+          R -e 'if(!requireNamespace("duckdb", quietly = TRUE)) install.packages("duckdb")'
+          R -e 'if(!requireNamespace("duckplyr", quietly = TRUE)) install.packages("duckplyr")'
+          R -e 'if(!requireNamespace("tidyr", quietly = TRUE)) install.packages("tidyr")'
+          R -e 'if(!requireNamespace("dbplyr", quietly = TRUE)) install.packages("dbplyr")'
+          R -e 'renv::status()'
+      
+      - name: Create necessary directories
+        run: |
+          mkdir -p data
+          mkdir -p app/data
+          ls -la  # Debug: list directories
+        
+      - name: Clean previous data
+        run: |
+          rm -rf data/*.gz || true
+          rm -f app/data/results_with_crew.csv || true
+      
+      - name: Run IMDb TV Shows analysis script
+        run: |
+          Rscript imdb_tv_shows_analysis.R
+        timeout-minutes: 15
+
+      - name: Debug directory contents
+        if: always()
+        run: |
+          echo "Current directory structure:"
+          ls -R
+          echo "Content of app/data directory (if exists):"
+          ls -la app/data || echo "app/data directory not found"
+          
+      - name: Upload results artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: imdb-results
+          path: app/data/imdb_top_5000_tv_shows.csv
+          if-no-files-found: error  # Falhar explicitamente se o arquivo não existir
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "tiagoadrianunes@gmail.com"
+          git config --global user.name "TiagoAdriaNunes"
+          git config --global pull.rebase false
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+
+      - name: Commit and push changes
+        if: success()
+        run: |
+          if [ -f "app/data/imdb_top_5000_tv_shows.csv" ]; then
+            git pull origin ${{ github.ref }} --no-rebase
+            git add -f app/data/imdb_top_5000_tv_shows.csv
+            git diff --staged --quiet || git commit -m "Update IMDb TV Shows analysis results [skip ci]"
+            git push origin HEAD:${{ github.ref }}
+          else
+            echo "Error: imdb_top_5000_tv_shows.csv file not found"
+            exit 1
+          fi

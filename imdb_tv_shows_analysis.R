@@ -13,27 +13,53 @@ con <- dbConnect(duckdb())
 # Start time measurement
 start_time <- Sys.time()
 
-# Create a directory for data storage if it doesn't exist
+# Define local data directory and output file
 data_dir <- "data"
+output_dir <- "app/data"
+output_file <- "imdb_top_5000_tv_shows.csv"
+output_path <- file.path(output_dir, output_file)
+
+# Remove existing file if it exists
+if (file.exists(output_path)) {
+  file.remove(output_path)
+  print(paste("Removed existing file:", output_path))
+}
+
+# Create directories if they don't exist
 if (!dir.exists(data_dir)) {
   dir.create(data_dir)
-} else {
-  # Get current date
-  today <- Sys.Date()
+}
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
+
+# Check for GitHub file and download it if necessary
+github_url <- "https://raw.githubusercontent.com/TiagoAdriaNunes/imdb_top_5000_tv_shows/main/app/data/imdb_top_5000_tv_shows.csv"
+temp_file <- file.path(data_dir, "temp_tv_shows.csv")
+
+# Try to download the file from GitHub
+github_file_exists <- FALSE
+tryCatch({
+  download.file(github_url, temp_file, mode = "wb")
+  github_file_exists <- TRUE
+  print(paste("File downloaded from GitHub to:", temp_file))
+}, error = function(e) {
+  print(paste("GitHub file not available:", e$message))
+})
+
+# Clean up existing .gz files that are not from today
+today <- Sys.Date()
+gz_files <- list.files(data_dir, pattern = "\\.gz$", full.names = TRUE)
+if (length(gz_files) > 0) {
+  # Get file modification dates
+  file_dates <- as.Date(file.info(gz_files)$mtime)
   
-  # Clean up existing .gz files that are not from today
-  gz_files <- list.files(data_dir, pattern = "\\.gz$", full.names = TRUE)
-  if (length(gz_files) > 0) {
-    # Get file modification dates
-    file_dates <- as.Date(file.info(gz_files)$mtime)
-    
-    # Find files that are not from today
-    old_files <- gz_files[file_dates != today]
-    
-    if (length(old_files) > 0) {
-      file.remove(old_files)
-      print(paste("Removed", length(old_files), "outdated .gz files"))
-    }
+  # Find files that are not from today
+  old_files <- gz_files[file_dates != today]
+  
+  if (length(old_files) > 0) {
+    file.remove(old_files)
+    print(paste("Removed", length(old_files), "outdated .gz files"))
   }
 }
 
@@ -274,12 +300,17 @@ results_with_crew <- results_with_crew %>%
   select(tconst, primaryTitle, startYear, endYear, rank, averageRating, numVotes, runtimeMinutes, score, directors, writers, genres, IMDbLink, Title_IMDb_Link)
 
 # Save results to CSV
-output_dir <- "app/data"
-if (!dir.exists(output_dir)) {
-  dir.create(output_dir, recursive = TRUE)
+write.csv(results_with_crew, output_path, row.names = FALSE)
+print(paste("File saved to:", output_path))
+
+# Record file modification date for future reference
+file_date <- format(file.mtime(output_path), "%Y-%m-%d")
+print(paste("File last modified on:", file_date))
+
+# Optionally, clean up the temporary file
+if (file.exists(temp_file)) {
+  file.remove(temp_file)
 }
-write.csv(results_with_crew, file.path(output_dir, "imdb_top_5000_tv_shows.csv"), row.names = FALSE)
-print(paste("File saved to:", file.path(output_dir, "imdb_top_5000_tv_shows.csv")))
 
 # Free memory by running garbage collection
 gc()
