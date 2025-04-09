@@ -294,10 +294,10 @@ results_with_crew <- results_with_crew %>%
     writers = ifelse(is.na(writers), "-", writers)
   )
 
-# Order and select columns (including score for reference)
+# Order and select columns
 results_with_crew <- results_with_crew %>%
   arrange(rank) %>%
-  select(tconst, primaryTitle, startYear, endYear, rank, averageRating, numVotes, score, directors, writers, genres, IMDbLink, Title_IMDb_Link)
+  select(tconst, primaryTitle, startYear, endYear, rank, averageRating, numVotes, directors, writers, genres, IMDbLink, Title_IMDb_Link)
 
 # Save results to CSV
 write.csv(results_with_crew, output_path, row.names = FALSE)
