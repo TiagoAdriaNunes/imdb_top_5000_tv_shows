@@ -250,7 +250,7 @@ print(paste("Number of combined crew entries:", nrow(title_crew_long_combined)))
 
 # Ensure unique ranks by using tconst as a secondary criterion
 title_basics_ratings <- title_basics_ratings %>%
-  select(tconst, primaryTitle, startYear, endYear, rank, averageRating, numVotes, runtimeMinutes, genres, score, score_rounded) %>%
+  select(tconst, primaryTitle, startYear, endYear, rank, averageRating, numVotes, genres, score, score_rounded) %>%
   collect() %>%  # Materialize the data first
   mutate(genres = gsub(",([^ ])", ", \\1", genres))  # Format genres after collecting
 
@@ -297,7 +297,7 @@ results_with_crew <- results_with_crew %>%
 # Order and select columns (including score for reference)
 results_with_crew <- results_with_crew %>%
   arrange(rank) %>%
-  select(tconst, primaryTitle, startYear, endYear, rank, averageRating, numVotes, runtimeMinutes, score, directors, writers, genres, IMDbLink, Title_IMDb_Link)
+  select(tconst, primaryTitle, startYear, endYear, rank, averageRating, numVotes, score, directors, writers, genres, IMDbLink, Title_IMDb_Link)
 
 # Save results to CSV
 write.csv(results_with_crew, output_path, row.names = FALSE)
