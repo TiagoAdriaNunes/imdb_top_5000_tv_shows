@@ -25,8 +25,8 @@ renv::restore()
 # Run analysis script
 source("imdb_tv_shows_analysis.R")
 
-# Launch Shiny app
-shiny::runApp("./app/app.R")
+# Launch Shiny app 
+shiny::runApp()
 ```
 
 ## Data Processing
