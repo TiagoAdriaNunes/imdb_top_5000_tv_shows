@@ -1,0 +1,95 @@
+box::use(
+  dplyr[select],
+  logger[log_info],
+  reactable[colDef, colFormat, reactable, reactableOutput, renderReactable],
+  shiny[moduleServer, NS],
+  utils[head],
+)
+
+#' @export
+table_ui <- function(id) {
+  ns <- NS(id)
+
+  reactableOutput(ns("dataTable"))
+}
+
+#' @export
+table_server <- function(id, filtered_data) {
+  moduleServer(id, function(input, output, session) {
+    output$dataTable <- renderReactable({
+      data_to_display <- filtered_data()
+      log_info(
+        "Table: filteredData has {nrow(data_to_display)} rows"
+      )
+
+      data_selected <- data_to_display |>
+        select(
+          rank,
+          Title_IMDb_Link,
+          startYear,
+          endYear,
+          averageRating,
+          numVotes,
+          directors,
+          writers,
+          genres
+        )
+
+      log_info(
+        "Table: after select has {nrow(data_selected)} rows"
+      )
+
+      reactable(
+        data_selected,
+        columns = list(
+          rank = colDef(name = "Rank", minWidth = 50),
+          Title_IMDb_Link = colDef(
+            name = "Title/IMDb Link",
+            html = TRUE,
+            minWidth = 220
+          ),
+          startYear = colDef(name = "Start Year", minWidth = 50),
+          endYear = colDef(
+            name = "End Year",
+            minWidth = 50,
+            cell = function(value) {
+              if (is.na(value)) "" else as.character(value)
+            }
+          ),
+          averageRating = colDef(
+            name = "Average Rating",
+            minWidth = 70
+          ),
+          numVotes = colDef(
+            name = "Number of Votes",
+            minWidth = 80,
+            format = colFormat(
+              separators = TRUE,
+              digits = 0,
+              locales = "en-US"
+            )
+          ),
+          directors = colDef(
+            name = "Directors",
+            minWidth = 150,
+            na = "-"
+          ),
+          writers = colDef(
+            name = "Writers",
+            minWidth = 200,
+            na = "-"
+          ),
+          genres = colDef(name = "Genres", minWidth = 180)
+        ),
+        searchable = FALSE,
+        compact = TRUE,
+        defaultPageSize = 10,
+        pageSizeOptions = c(10, 25, 50, 100),
+        showPageSizeOptions = TRUE,
+        bordered = TRUE,
+        striped = TRUE,
+        highlight = TRUE
+      )
+    })
+  })
+}

@@ -1,0 +1,203 @@
+box::use(
+  dplyr[arrange, desc, filter, group_by, mutate, n, summarise],
+  logger[log_error],
+  plotly[add_annotations, config, layout, plot_ly, plotlyOutput, renderPlotly],
+  shiny[column, fluidRow, moduleServer, NS],
+  shinycssloaders[withSpinner],
+  shinydashboard[box],
+  tidyr[separate_rows],
+  utils[head],
+)
+
+box::use(
+  .. / utils / helpers[create_empty_plot],
+)
+
+#' @export
+charts_ui <- function(id, spinner_type = 3, spinner_color = "#427ea6", spinner_bg_color = "#FFFFFF") {
+  ns <- NS(id)
+
+  fluidRow(
+    box(
+      title = "Best Directors, Writers, and Genres by TV Shows",
+      width = 12,
+      fluidRow(
+        column(
+          width = 4,
+          withSpinner(
+            plotlyOutput(ns("plot_directors_by_shows")),
+            type = spinner_type,
+            color = spinner_color,
+            color.background = spinner_bg_color
+          )
+        ),
+        column(
+          width = 4,
+          withSpinner(
+            plotlyOutput(ns("plot_writers_by_shows")),
+            type = spinner_type,
+            color = spinner_color,
+            color.background = spinner_bg_color
+          )
+        ),
+        column(
+          width = 4,
+          withSpinner(
+            plotlyOutput(ns("plot_genres_by_shows")),
+            type = spinner_type,
+            color = spinner_color,
+            color.background = spinner_bg_color
+          )
+        )
+      )
+    )
+  )
+}
+
+#' @export
+charts_server <- function(id, filtered_data, num_results, chart_color = "#427ea6") {
+  moduleServer(id, function(input, output, session) {
+    # Plot: Best Directors by TV Shows
+    output$plot_directors_by_shows <- renderPlotly({
+      plot_data <- tryCatch(
+        {
+          filtered_data() |>
+            separate_rows(directors, sep = ",\\s*") |>
+            filter(
+              !is.na(directors),
+              directors != "",
+              directors != "-",
+              directors != "NA"
+            ) |>
+            group_by(directors) |>
+            summarise(show_count = n()) |>
+            arrange(desc(show_count)) |>
+            head(num_results()) |>
+            mutate(
+              directors = factor(
+                directors,
+                levels = rev(unique(directors))
+              )
+            )
+        },
+        error = function(e) {
+          log_error("Error in directors plot: {e$message}")
+          NULL
+        }
+      )
+
+      if (is.null(plot_data) || nrow(plot_data) == 0) {
+        create_empty_plot("No Director Data Available")
+      } else {
+        plot_ly(
+          data = plot_data,
+          x = ~show_count,
+          y = ~directors,
+          type = "bar",
+          marker = list(color = chart_color),
+          orientation = "h"
+        ) |>
+          layout(
+            xaxis = list(title = "Number of TV Shows"),
+            yaxis = list(title = "Director")
+          ) |>
+          config(displayModeBar = FALSE)
+      }
+    })
+
+    # Plot: Best Writers by TV Shows
+    output$plot_writers_by_shows <- renderPlotly({
+      plot_data <- tryCatch(
+        {
+          filtered_data() |>
+            separate_rows(writers, sep = ",\\s*") |>
+            filter(
+              !is.na(writers),
+              writers != "",
+              writers != "-",
+              writers != "NA"
+            ) |>
+            group_by(writers) |>
+            summarise(show_count = n()) |>
+            arrange(desc(show_count)) |>
+            head(num_results()) |>
+            mutate(
+              writers = factor(
+                writers,
+                levels = rev(unique(writers))
+              )
+            )
+        },
+        error = function(e) {
+          log_error("Error in writers plot: {e$message}")
+          NULL
+        }
+      )
+
+      if (is.null(plot_data) || nrow(plot_data) == 0) {
+        create_empty_plot("No Writer Data Available")
+      } else {
+        plot_ly(
+          data = plot_data,
+          x = ~show_count,
+          y = ~writers,
+          type = "bar",
+          marker = list(color = chart_color),
+          orientation = "h"
+        ) |>
+          layout(
+            xaxis = list(title = "Number of TV Shows"),
+            yaxis = list(title = "Writer")
+          ) |>
+          config(displayModeBar = FALSE)
+      }
+    })
+
+    # Plot: Best Genres by TV Shows
+    output$plot_genres_by_shows <- renderPlotly({
+      plot_data <- tryCatch(
+        {
+          filtered_data() |>
+            separate_rows(genres, sep = ",\\s*") |>
+            filter(
+              !is.na(genres),
+              genres != "",
+              genres != "-"
+            ) |>
+            group_by(genres) |>
+            summarise(show_count = n()) |>
+            arrange(desc(show_count)) |>
+            head(num_results()) |>
+            mutate(
+              genres = factor(
+                genres,
+                levels = rev(unique(genres))
+              )
+            )
+        },
+        error = function(e) {
+          log_error("Error in genres plot: {e$message}")
+          NULL
+        }
+      )
+
+      if (is.null(plot_data) || nrow(plot_data) == 0) {
+        create_empty_plot("No Genre Data Available")
+      } else {
+        plot_ly(
+          data = plot_data,
+          x = ~show_count,
+          y = ~genres,
+          type = "bar",
+          marker = list(color = chart_color),
+          orientation = "h"
+        ) |>
+          layout(
+            xaxis = list(title = "Number of TV Shows"),
+            yaxis = list(title = "Genre")
+          ) |>
+          config(displayModeBar = FALSE)
+      }
+    })
+  })
+}
