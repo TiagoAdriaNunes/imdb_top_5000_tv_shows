@@ -16,7 +16,10 @@ if (file.exists(results_file)) {
 }
 
 # Download the file from GitHub
-github_url <- "https://raw.githubusercontent.com/TiagoAdriaNunes/imdb_top_5000_tv_shows/main/app/data/imdb_top_5000_tv_shows.csv"
+github_url <- paste0(
+  "https://raw.githubusercontent.com/TiagoAdriaNunes/imdb_top_5000_tv_shows/",
+  "main/app/data/imdb_top_5000_tv_shows.csv"
+)
 dir.create(dirname(results_file), showWarnings = FALSE, recursive = TRUE)
 download.file(github_url, results_file, mode = "wb")
 log_info("File downloaded from GitHub to: {results_file}")

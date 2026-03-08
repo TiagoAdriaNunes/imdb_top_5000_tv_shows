@@ -1,6 +1,20 @@
 box::use(
   logger[log_info],
-  shiny[actionButton, column, div, fluidRow, HTML, icon, moduleServer, NS, observeEvent, reactive, sliderInput, tagList, updateSliderInput],
+  shiny[
+    actionButton,
+    column,
+    div,
+    fluidRow,
+    HTML,
+    icon,
+    moduleServer,
+    NS,
+    observeEvent,
+    reactive,
+    sliderInput,
+    tagList,
+    updateSliderInput
+  ],
   shinydashboard[menuItem, sidebarMenu],
   shinyWidgets[updateVirtualSelect, virtualSelectInput],
 )
