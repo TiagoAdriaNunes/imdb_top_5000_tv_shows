@@ -1,0 +1,36 @@
+// Virtual Select dropdown z-index fix
+.vscomp-dropbox-container {
+  z-index: 99999 !important;
+}
+
+// Allow virtual select dropdowns to overflow the sidebar
+.main-sidebar,
+.sidebar,
+.sidebar-menu,
+.treeview-menu {
+  overflow: visible !important;
+}
+
+// Sidebar spacing overrides
+.sidebar-menu > .menu-item {
+  margin-bottom: 0px !important;
+}
+
+.form-group {
+  margin-bottom: 0px !important;
+}
+
+// Header nav links
+.navbar-nav > .dropdown > a,
+.navbar-nav > li > a.header-link {
+  color: white;
+  padding: 10px;
+}
+
+// Sidebar IMDb attribution
+.imdb-attribution {
+  padding: 15px;
+  text-align: left;
+  font-size: 0.8em;
+  color: #fff;
+}
